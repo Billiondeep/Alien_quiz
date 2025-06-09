@@ -1,7 +1,9 @@
+import 'package:alien_quiz/screen/admin/quiz/question_form_screen.dart';
+import 'package:alien_quiz/screen/user/quiz/quiz_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';  // import file yang di-generate flutterfire
-import 'screen/splash_screen.dart';
+import 'screen/welcome_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -25,7 +27,7 @@ class AlienQuizApp extends StatelessWidget {
         scaffoldBackgroundColor: const Color(0xFF1A1A2E),
         primaryColor: Colors.orange,
       ),
-      home: const SplashScreen(),
+      home: const QuestionFormScreen(),
     );
   }
 }

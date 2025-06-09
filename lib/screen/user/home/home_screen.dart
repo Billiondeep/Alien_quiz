@@ -1,7 +1,7 @@
+import 'package:alien_quiz/screen/user/history/history_screen.dart';
+import 'package:alien_quiz/screen/user/import/import_screen.dart';
+import 'package:alien_quiz/screen/user/quiz/quiz_screen.dart';
 import 'package:flutter/material.dart';
-import 'quiz_screen.dart';
-import 'history_screen.dart';
-import 'import_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});

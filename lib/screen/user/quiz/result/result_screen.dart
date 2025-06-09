@@ -1,6 +1,6 @@
 // File: lib/screens/result_screen.dart
+import 'package:alien_quiz/screen/user/home/home_screen.dart';
 import 'package:flutter/material.dart';
-import 'home_screen.dart';
 
 class ResultScreen extends StatelessWidget {
   final int score;
