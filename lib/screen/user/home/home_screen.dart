@@ -1,10 +1,36 @@
-import 'package:alien_quiz/screen/user/history/history_screen.dart';
-import 'package:alien_quiz/screen/user/import/import_screen.dart';
-import 'package:alien_quiz/screen/user/quiz/quiz_screen.dart';
+import 'package:alien_quiz/screen/user/quiz/models/dummy_question.dart';
+import 'package:alien_quiz/screen/user/quiz/models/quiz_bundle.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:alien_quiz/screen/user/import/import_screen.dart';
+import 'package:alien_quiz/screen/user/history/history_screen.dart';
+import 'package:alien_quiz/screen/user/quiz/quiz_screen.dart';
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> {
+  List<QuizBundle> allQuizList = [dummyQuiz];
+  int? quizScore;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadQuizScore();
+  }
+
+  Future<void> _loadQuizScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = 'quiz_result_${dummyQuiz.id}';
+    final storedScore = prefs.getInt(key);
+    setState(() {
+      quizScore = storedScore;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -33,32 +59,40 @@ class HomeScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text("List Quiz", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 8),
                   DataTable(
                     columnSpacing: 12,
-                    headingRowColor: MaterialStateProperty.all(Colors.orange),
+                    headingRowColor: MaterialStatePropertyAll(Colors.orange),
                     columns: const [
-                      DataColumn(label: Text('Tingkat Kesulitan')),
-                      DataColumn(label: Text('Tema Pelajaran')),
+                      DataColumn(label: Text('Level')),
+                      DataColumn(label: Text('Tema')),
                       DataColumn(label: Text('Skor')),
                       DataColumn(label: Text('')),
                     ],
-                    rows: List.generate(4, (index) {
-                      return DataRow(cells: [
-                        const DataCell(Text('Level 1')),
-                        const DataCell(Text('Matematika')),
-                        const DataCell(Text('--/--')),
+                    rows: [
+                      DataRow(cells: [
+                        DataCell(Text(dummyQuiz.level)),
+                        DataCell(Text(dummyQuiz.tema)),
+                        DataCell(Text(
+                          quizScore != null ? '$quizScore/${dummyQuiz.questions.length}' : '--/--',
+                        )),
                         DataCell(
                           ElevatedButton(
-                            onPressed: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(builder: (_) => const QuizScreen()),
-                            ),
+                            onPressed: () async {
+                              final result = await Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => QuizScreen(quiz: dummyQuiz)),
+                              );
+                              if (result == true) {
+                                await _loadQuizScore();
+                              }
+                            },
                             style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
-                            child: const Text('Mulai Quiz'),
+                            child: const Text("Mulai Quiz"),
                           ),
                         ),
-                      ]);
-                    }),
+                      ]),
+                    ],
                   ),
                 ],
               ),

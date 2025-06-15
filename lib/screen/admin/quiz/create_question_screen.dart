@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
-import 'package:alien_quiz/screen/admin/widgets/admin_header.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
-import 'widgets/soal_form_widget.dart';
-
+import 'package:alien_quiz/screen/admin/widgets/admin_header.dart';
+import 'widgets/form_pg_widget.dart';
+import './models/question_model.dart';
+import 'widgets/difficulty_dropdown.dart';
 
 class QuestionFormScreen extends StatefulWidget {
   const QuestionFormScreen({super.key});
@@ -16,18 +17,27 @@ class QuestionFormScreen extends StatefulWidget {
 class _QuestionFormScreenState extends State<QuestionFormScreen> {
   final TextEditingController _temaController = TextEditingController();
   String _difficulty = 'Level 1';
-
-  List<Map<String, dynamic>> _questions = List.generate(5, (index) => {
-    "question": "",
-    "options": List.filled(5, ""),
-    "answer": "Jawaban 1",
-  });
+  List<QuestionModel> _questions = List.generate(5, (_) => QuestionModel());
 
   Future<void> exportToJson() async {
+    if (_temaController.text.trim().isEmpty) {
+      return _showError("Tema tidak boleh kosong");
+    }
+
+    for (int i = 0; i < _questions.length; i++) {
+      final q = _questions[i];
+      if (q.question.trim().isEmpty ||
+          q.options.any((opt) => opt.trim().isEmpty)) {
+        return _showError(
+          "Semua soal dan jawaban harus diisi (Cek Soal ${i + 1})",
+        );
+      }
+    }
+
     final data = {
-      "tema": _temaController.text,
+      "tema": _temaController.text.trim(),
       "level": _difficulty,
-      "questions": _questions,
+      "questions": _questions.map((q) => q.toJson()).toList(),
     };
 
     final directory = await getApplicationDocumentsDirectory();
@@ -35,7 +45,13 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
     await file.writeAsString(jsonEncode(data));
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Soal berhasil diekspor ke soal.json')),
+      const SnackBar(content: Text('✅ Soal berhasil diekspor ke soal.json')),
+    );
+  }
+
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
   }
 
@@ -64,70 +80,63 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
               onPressed: () => Navigator.pop(context),
             ),
             const SizedBox(height: 12),
-
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
                 child: ListView(
                   children: [
-                    // Tema
-                    Row(
-                      children: [
-                        const Text(
-                          "Tema: ",
-                          style: TextStyle(color: Colors.white, fontSize: 16),
+                    // Title
+                    Center(
+                      child: Text(
+                        "📝 Membuat Soal Pilihan Ganda",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
                         ),
-                        Expanded(
-                          child: TextField(
-                            controller: _temaController,
-                            style: const TextStyle(color: Colors.white),
-                            decoration: _inputDecoration("Masukan Tema"),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 24),
 
-                    // Level
-                    Container(
-                      decoration: BoxDecoration(
+                    // Input Tema
+                    Text(
+                      "Tema",
+                      style: const TextStyle(
                         color: Colors.white,
-                        borderRadius: BorderRadius.circular(6),
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
                       ),
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: DropdownButton<String>(
-                        value: _difficulty,
-                        isExpanded: true,
-                        underline: Container(),
-                        dropdownColor: Colors.orange[100],
-                        onChanged: (value) =>
-                            setState(() => _difficulty = value!),
-                        items: List.generate(5, (i) => 'Level ${i + 1}')
-                            .map((level) => DropdownMenuItem(
-                          value: level,
-                          child: Text(level),
-                        ))
-                            .toList(),
-                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    TextField(
+                      controller: _temaController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _inputDecoration("Masukan Tema"),
                     ),
 
                     const SizedBox(height: 20),
 
-                    // Soal-soal
+                    DifficultyDropdown(
+                        selectedLevel: _difficulty,
+                        onChanged: (value) => setState(() => _difficulty = value),
+                      ),
+
+                    const SizedBox(height: 28),
+
+                    // Form untuk 5 Soal
                     ...List.generate(
                       _questions.length,
-                          (i) => SoalFormWidget(
+                      (i) => SoalFormWidget(
                         index: i,
-                        data: _questions[i],
-                        onChanged: (updated) {
-                          setState(() {
-                            _questions[i] = updated;
-                          });
+                        model: _questions[i],
+                        onChanged: (updatedModel) {
+                          setState(() => _questions[i] = updatedModel);
                         },
                       ),
                     ),
 
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 32),
 
                     // Tombol Export
                     Center(
@@ -136,7 +145,9 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.amber,
                           padding: const EdgeInsets.symmetric(
-                              horizontal: 32, vertical: 14),
+                            horizontal: 32,
+                            vertical: 14,
+                          ),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
@@ -145,12 +156,14 @@ class _QuestionFormScreenState extends State<QuestionFormScreen> {
                         label: const Text(
                           "Export Soal",
                           style: TextStyle(
-                              color: Colors.black,
-                              fontWeight: FontWeight.bold),
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
                         ),
                       ),
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 24),
                   ],
                 ),
               ),

@@ -1,6 +1,6 @@
 import 'package:alien_quiz/screen/admin/widgets/admin_header.dart';
 import 'package:flutter/material.dart';
-import '../quiz/question_form_screen.dart';
+import '../quiz/create_question_screen.dart';
 
 class HomeAdmin extends StatelessWidget {
   const HomeAdmin({super.key});

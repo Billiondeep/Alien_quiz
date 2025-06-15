@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import '../models/question_model.dart';
 
 class SoalFormWidget extends StatelessWidget {
   final int index;
-  final Map<String, dynamic> data;
-  final ValueChanged<Map<String, dynamic>> onChanged;
+  final QuestionModel model;
+  final ValueChanged<QuestionModel> onChanged;
 
   const SoalFormWidget({
     super.key,
     required this.index,
-    required this.data,
+    required this.model,
     required this.onChanged,
   });
 
@@ -29,7 +30,7 @@ class SoalFormWidget extends StatelessWidget {
         childrenPadding: const EdgeInsets.all(12),
         children: [
           // Label Pertanyaan
-          Container(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Pertanyaan',
@@ -53,15 +54,20 @@ class SoalFormWidget extends StatelessWidget {
               border: OutlineInputBorder(),
             ),
             onChanged: (val) {
-              final updated = {...data, 'question': val};
+              final updated = QuestionModel(
+                question: val,
+                options: model.options,
+                correctAnswerIndex: model.correctAnswerIndex,
+              );
               onChanged(updated);
             },
+            controller: TextEditingController(text: model.question),
           ),
 
           const SizedBox(height: 16),
 
           // Label Pilihan Ganda
-          Container(
+          Align(
             alignment: Alignment.centerLeft,
             child: Text(
               'Jawaban Pilihan Ganda',
@@ -98,10 +104,15 @@ class SoalFormWidget extends StatelessWidget {
                         fillColor: Colors.white,
                         border: OutlineInputBorder(),
                       ),
+                      controller: TextEditingController(text: model.options[j]),
                       onChanged: (val) {
-                        final updatedOptions = List<String>.from(data['options']);
+                        final updatedOptions = List<String>.from(model.options);
                         updatedOptions[j] = val;
-                        final updated = {...data, 'options': updatedOptions};
+                        final updated = QuestionModel(
+                          question: model.question,
+                          options: updatedOptions,
+                          correctAnswerIndex: model.correctAnswerIndex,
+                        );
                         onChanged(updated);
                       },
                     ),
@@ -120,21 +131,26 @@ class SoalFormWidget extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
             ),
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: DropdownButton<String>(
-              value: data['answer'],
+            child: DropdownButton<int>(
+              value: model.correctAnswerIndex,
               isExpanded: true,
               underline: Container(),
               dropdownColor: Colors.orange[100],
               style: const TextStyle(color: Colors.black),
               onChanged: (val) {
-                final updated = {...data, 'answer': val};
-                onChanged(updated);
+                if (val != null) {
+                  final updated = QuestionModel(
+                    question: model.question,
+                    options: model.options,
+                    correctAnswerIndex: val,
+                  );
+                  onChanged(updated);
+                }
               },
               items: List.generate(5, (j) {
-                final jawaban = 'Jawaban ${j + 1}';
                 return DropdownMenuItem(
-                  value: jawaban,
-                  child: Text(jawaban),
+                  value: j,
+                  child: Text('Jawaban ${j + 1}'),
                 );
               }),
             ),
