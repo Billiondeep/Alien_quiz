@@ -1,162 +1,169 @@
 import 'package:flutter/material.dart';
-import '../models/question_model.dart';
+import '../../../models/question_model.dart';
 
-class SoalFormWidget extends StatelessWidget {
+class FormPgWidget extends StatefulWidget {
   final int index;
   final QuestionModel model;
-  final ValueChanged<QuestionModel> onChanged;
+  final ValueChanged<QuestionModel>? onChanged;
 
-  const SoalFormWidget({
+  const FormPgWidget({
     super.key,
     required this.index,
     required this.model,
-    required this.onChanged,
+    this.onChanged,
   });
+
+  @override
+  State<FormPgWidget> createState() => _FormPgWidgetState();
+}
+
+class _FormPgWidgetState extends State<FormPgWidget> {
+  late TextEditingController questionController;
+  late List<TextEditingController> optionControllers;
+  int selectedCorrectIndex = 0;
+  bool isExpanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    questionController = TextEditingController(text: widget.model.question);
+    optionControllers = List.generate(
+      5,
+          (i) => TextEditingController(text: widget.model.options[i]),
+    );
+    selectedCorrectIndex = widget.model.correctAnswerIndex;
+
+    questionController.addListener(_notifyChange);
+    for (var controller in optionControllers) {
+      controller.addListener(_notifyChange);
+    }
+  }
+
+  void _notifyChange() {
+    final updatedModel = QuestionModel(
+      question: questionController.text,
+      options: optionControllers.map((c) => c.text).toList(),
+      correctAnswerIndex: selectedCorrectIndex,
+    );
+    widget.onChanged?.call(updatedModel);
+  }
+
+  @override
+  void dispose() {
+    questionController.dispose();
+    for (var c in optionControllers) {
+      c.dispose();
+    }
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
-      child: ExpansionTile(
-        backgroundColor: Colors.orange,
-        collapsedBackgroundColor: Colors.orange.shade700,
-        textColor: Colors.white,
-        iconColor: Colors.white,
-        collapsedIconColor: Colors.white,
-        title: Text(
-          "Buat Soal ${index + 1}",
-          style: const TextStyle(fontWeight: FontWeight.bold),
+      child: Container(
+        decoration: BoxDecoration(
+          color: const Color(0xFF2C233D),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Colors.orange, width: 1),
         ),
-        childrenPadding: const EdgeInsets.all(12),
-        children: [
-          // Label Pertanyaan
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Pertanyaan',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+        child: Column(
+          children: [
+            ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
               ),
-            ),
-          ),
-          const SizedBox(height: 4),
-
-          // Input Pertanyaan
-          TextField(
-            style: const TextStyle(color: Colors.black),
-            decoration: const InputDecoration(
-              hintText: 'Masukan Pertanyaan',
-              hintStyle: TextStyle(color: Colors.black54),
-              contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              filled: true,
-              fillColor: Colors.white,
-              border: OutlineInputBorder(),
-            ),
-            onChanged: (val) {
-              final updated = QuestionModel(
-                question: val,
-                options: model.options,
-                correctAnswerIndex: model.correctAnswerIndex,
-              );
-              onChanged(updated);
-            },
-            controller: TextEditingController(text: model.question),
-          ),
-
-          const SizedBox(height: 16),
-
-          // Label Pilihan Ganda
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Jawaban Pilihan Ganda',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
+              title: Text(
+                "Buat Soal ${widget.index + 1}",
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.orange,
+                ),
               ),
+              trailing: Icon(
+                isExpanded ? Icons.remove : Icons.add,
+                color: Colors.orange,
+              ),
+              onTap: () => setState(() => isExpanded = !isExpanded),
             ),
-          ),
-          const SizedBox(height: 8),
-
-          // Input Jawaban 1-5
-          ...List.generate(5, (j) {
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: Row(
-                children: [
-                  Text(
-                    'Jawaban ${j + 1} : ',
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
+            AnimatedCrossFade(
+              duration: const Duration(milliseconds: 300),
+              crossFadeState: isExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+              firstChild: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1C1B29),
+                  borderRadius: const BorderRadius.only(
+                    bottomLeft: Radius.circular(12),
+                    bottomRight: Radius.circular(12),
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: TextField(
-                      style: const TextStyle(color: Colors.black),
-                      decoration: const InputDecoration(
-                        hintText: 'Masukan Jawaban',
-                        hintStyle: TextStyle(color: Colors.black45),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(),
-                      ),
-                      controller: TextEditingController(text: model.options[j]),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text("Pertanyaan", style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 4),
+                    TextField(
+                      controller: questionController,
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _darkInput("Pertanyaan"),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text("Jawaban Pilihan Ganda", style: TextStyle(color: Colors.white70)),
+                    const SizedBox(height: 8),
+                    ...List.generate(5, (j) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: TextField(
+                          controller: optionControllers[j],
+                          style: const TextStyle(color: Colors.white),
+                          decoration: _darkInput("Jawaban ${j + 1}"),
+                        ),
+                      );
+                    }),
+                    const SizedBox(height: 8),
+                    DropdownButtonFormField<int>(
+                      value: selectedCorrectIndex,
+                      isExpanded: true,
+                      dropdownColor: const Color(0xFF1C1B29),
+                      style: const TextStyle(color: Colors.white),
+                      decoration: _darkInput("Jawaban Benar: ${selectedCorrectIndex + 1}"),
                       onChanged: (val) {
-                        final updatedOptions = List<String>.from(model.options);
-                        updatedOptions[j] = val;
-                        final updated = QuestionModel(
-                          question: model.question,
-                          options: updatedOptions,
-                          correctAnswerIndex: model.correctAnswerIndex,
-                        );
-                        onChanged(updated);
+                        if (val != null) {
+                          setState(() => selectedCorrectIndex = val);
+                          _notifyChange();
+                        }
                       },
+                      items: List.generate(5, (j) => DropdownMenuItem(
+                        value: j,
+                        child: Text('Jawaban ${j + 1}'),
+                      )),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            );
-          }),
-
-          const SizedBox(height: 10),
-
-          // Dropdown Jawaban Benar
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.grey[100],
-              borderRadius: BorderRadius.circular(8),
+              secondChild: const SizedBox.shrink(),
             ),
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: DropdownButton<int>(
-              value: model.correctAnswerIndex,
-              isExpanded: true,
-              underline: Container(),
-              dropdownColor: Colors.orange[100],
-              style: const TextStyle(color: Colors.black),
-              onChanged: (val) {
-                if (val != null) {
-                  final updated = QuestionModel(
-                    question: model.question,
-                    options: model.options,
-                    correctAnswerIndex: val,
-                  );
-                  onChanged(updated);
-                }
-              },
-              items: List.generate(5, (j) {
-                return DropdownMenuItem(
-                  value: j,
-                  child: Text('Jawaban ${j + 1}'),
-                );
-              }),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
+
+  InputDecoration _darkInput(String hint) => InputDecoration(
+    hintText: hint,
+    hintStyle: const TextStyle(color: Colors.white54),
+    filled: true,
+    fillColor: const Color(0xFF2C233D),
+    border: const UnderlineInputBorder(
+      borderSide: BorderSide(color: Colors.white54),
+    ),
+    enabledBorder: const UnderlineInputBorder(
+      borderSide: BorderSide(color: Colors.white30),
+    ),
+    focusedBorder: const UnderlineInputBorder(
+      borderSide: BorderSide(color: Colors.white),
+    ),
+  );
 }

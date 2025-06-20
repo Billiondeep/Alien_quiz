@@ -13,7 +13,8 @@ class QuestionModel {
     return QuestionModel(
       question: json['question'] ?? '',
       options: List<String>.from(json['options'] ?? []),
-      correctAnswerIndex: json['correctAnswerIndex'] ?? 0,
+      correctAnswerIndex:
+      json['correctAnswerIndex'] ?? json['correct_answer_index'] ?? 0,
     );
   }
 

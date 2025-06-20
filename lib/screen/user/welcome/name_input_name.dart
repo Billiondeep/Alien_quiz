@@ -1,4 +1,5 @@
-import 'package:alien_quiz/screen/user/home/home_screen.dart';
+import 'package:alien_quiz/screen/user/welcome/home/home_screen.dart';
+import 'package:alien_quiz/screen/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
 class NameInputScreen extends StatelessWidget {
@@ -15,7 +16,10 @@ class NameInputScreen extends StatelessWidget {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => WelcomeScreen()),
+          )
         ),
         title: const Text(
           "Masukan Nama",

@@ -1,10 +1,10 @@
 import 'package:alien_quiz/screen/admin/login/login_screen.dart';
-import 'package:alien_quiz/screen/user/home/home_screen.dart';
+import 'package:alien_quiz/screen/user/welcome/name_input_name.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class SplashScreen extends StatelessWidget {
-  const SplashScreen({super.key});
+class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -64,7 +64,7 @@ class SplashScreen extends StatelessWidget {
               onPressed: () {
                 Navigator.pushReplacement(
                   context,
-                  MaterialPageRoute(builder: (_) => const HomeScreen()),
+                  MaterialPageRoute(builder: (_) => NameInputScreen()),
                 );
               },
               style: ElevatedButton.styleFrom(

@@ -1,6 +1,6 @@
+import 'package:alien_quiz/screen/admin/quiz/create_question_form_screen.dart';
 import 'package:alien_quiz/screen/admin/widgets/admin_header.dart';
 import 'package:flutter/material.dart';
-import '../quiz/create_question_screen.dart';
 
 class HomeAdmin extends StatelessWidget {
   const HomeAdmin({super.key});
@@ -54,7 +54,7 @@ class HomeAdmin extends StatelessWidget {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => const QuestionFormScreen(),
+                              builder: (_) => const CreateQuestionFormScreen(),
                             ),
                           );
                         },
