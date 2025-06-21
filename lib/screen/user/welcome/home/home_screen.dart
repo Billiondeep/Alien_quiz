@@ -19,6 +19,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   List<Map<String, dynamic>> importedQuizList = [];
+  bool isImporting = false;
 
   @override
   void initState() {
@@ -36,7 +37,6 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
-      // Fix tampilan rusak setelah kembali dari background
       setState(() {});
     }
   }
@@ -45,36 +45,35 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     final prefs = await SharedPreferences.getInstance();
     final rawList = prefs.getStringList('imported_quiz_list') ?? [];
     setState(() {
-      importedQuizList =
-          rawList
-              .map<Map<String, dynamic>>(
-                (item) => jsonDecode(item) as Map<String, dynamic>,
-              )
-              .toList();
+      importedQuizList = rawList
+          .map<Map<String, dynamic>>(
+            (item) => jsonDecode(item) as Map<String, dynamic>,
+      )
+          .toList();
     });
   }
 
   void _startQuiz(Map<String, dynamic> quizData) {
     final List<QuestionModel> questions =
-        (quizData['questions'] as List)
-            .map((json) => QuestionModel.fromJson(json))
-            .toList();
+    (quizData['questions'] as List)
+        .map((json) => QuestionModel.fromJson(json))
+        .toList();
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder:
-            (_) => QuizScreen(
-              id: quizData['id'] ?? 'quiz-imported',
-              title: quizData['tema'] ?? 'Quiz',
-              description: quizData['level'] ?? '',
-              questions: questions,
-            ),
+        builder: (_) => QuizScreen(
+          id: quizData['id'] ?? 'quiz-imported',
+          title: quizData['tema'] ?? 'Quiz',
+          description: quizData['level'] ?? '',
+          questions: questions,
+        ),
       ),
     );
   }
 
   Future<void> _openImportScreen() async {
+    setState(() => isImporting = true);
     final result = await Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const ImportScreen()),
@@ -82,6 +81,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
     if (result == true) {
       await _loadImportedQuiz();
     }
+    setState(() => isImporting = false);
   }
 
   @override
@@ -106,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
-            onPressed: _openImportScreen,
+            onPressed: isImporting ? null : _openImportScreen,
             tooltip: "Import Soal Manual",
           ),
         ],
@@ -128,12 +128,16 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             ),
             const SizedBox(height: 24),
 
-            /// Quiz List dengan batas tinggi jika > 5 item
-            SizedBox(
-              height: quizList.length > 5 ? 400 : null,
-              child: QuizListWidget(
-                quizList: quizList,
-                onStartQuiz: _startQuiz,
+            /// Quiz List
+            Container(
+              constraints: const BoxConstraints(
+                maxHeight: 450,
+              ),
+              child: SingleChildScrollView(
+                child: QuizListWidget(
+                  quizList: quizList,
+                  onStartQuiz: _startQuiz,
+                ),
               ),
             ),
 
@@ -143,13 +147,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
             Column(
               children: [
                 ElevatedButton(
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const HistoryScreen(),
-                        ),
-                      ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const HistoryScreen(),
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
@@ -168,13 +171,12 @@ class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed:
-                      () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const WelcomeScreen(),
-                        ),
-                      ),
+                  onPressed: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const WelcomeScreen(),
+                    ),
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepOrange,
                     foregroundColor: Colors.white,

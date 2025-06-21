@@ -30,13 +30,24 @@ class _ImportScreenState extends State<ImportScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final existing = prefs.getStringList('imported_quiz_list') ?? [];
-      final updatedList = [jsonEncode(jsonData), ...existing];
+
+      // 🛠️ Normalisasi structure, pastikan valid
+      final cleaned = {
+        'id': jsonData['id'] ?? DateTime.now().millisecondsSinceEpoch.toString(),
+        'tema': jsonData['tema'] ?? 'Tanpa Tema',
+        'level': jsonData['level'] ?? 'Level 1',
+        'questions': (jsonData['questions'] as List)
+            .map((q) => Map<String, dynamic>.from(q))
+            .toList(),
+      };
+
+      final updatedList = [jsonEncode(cleaned), ...existing];
       if (updatedList.length > 5) {
         updatedList.removeRange(5, updatedList.length);
       }
 
       await prefs.setStringList('imported_quiz_list', updatedList);
-      await prefs.setString('imported_quiz', jsonEncode(jsonData));
+      await prefs.setString('imported_quiz', jsonEncode(cleaned));
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -52,6 +63,7 @@ class _ImportScreenState extends State<ImportScreen> {
       if (mounted) setState(() => isLoading = false);
     }
   }
+
 
   Future<void> _pickFile() async {
     try {

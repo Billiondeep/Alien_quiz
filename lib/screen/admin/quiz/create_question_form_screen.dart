@@ -33,16 +33,23 @@ class _CreateQuestionFormScreenState extends State<CreateQuestionFormScreen> {
       final m = models[i];
       if (m.question.trim().isEmpty || m.options.any((opt) => opt.trim().isEmpty)) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('❌ Soal ${i + 1} belum lengkap'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('❌ Soal ${i + 1} belum lengkap'),
+            backgroundColor: Colors.red,
+          ),
         );
         return;
       }
     }
 
     final id = DateTime.now().millisecondsSinceEpoch.toString();
+    final temaRaw = temaController.text.trim();
+    final safeTema = temaRaw.isEmpty
+        ? 'quiz'
+        : temaRaw.replaceAll(RegExp(r'[^a-zA-Z0-9_-]'), '_'); // aman untuk nama file
     final data = {
       'id': id,
-      'tema': temaController.text.trim(),
+      'tema': temaRaw,
       'level': 'Level $level',
       'questions': models.map((q) => q.toJson()).toList(),
     };
@@ -53,10 +60,10 @@ class _CreateQuestionFormScreenState extends State<CreateQuestionFormScreen> {
 
     await initializeDateFormatting('id_ID', null);
     final dir = await getApplicationDocumentsDirectory();
-    final tema = temaController.text.trim().replaceAll(" ", "");
     final tanggal = DateFormat("dd-MMMM-yyyy", "id_ID").format(DateTime.now());
-    final filename = '$tema-Level$level-$tanggal.json';
+    final filename = '$safeTema-Level$level-$tanggal.json';
     final file = File('${dir.path}/$filename');
+
     await file.writeAsString(jsonEncode(data));
 
     if (!mounted) return;
