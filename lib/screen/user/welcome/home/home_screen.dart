@@ -1,9 +1,6 @@
-import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
-
+import 'package:alien_quiz/screen/welcome_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:receive_sharing_intent/receive_sharing_intent.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:alien_quiz/screen/models/question_model.dart';
@@ -20,95 +17,59 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
-  Map<String, dynamic>? importedQuiz;
-
-  StreamSubscription? _intentDataStreamSubscription;
+class _HomeScreenState extends State<HomeScreen> with WidgetsBindingObserver {
+  List<Map<String, dynamic>> importedQuizList = [];
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _loadImportedQuiz();
-
-    // ✅ Panggil dari instance, tidak perlu membuat objek langsung
-    ReceiveSharingIntent.instance.getInitialMedia().then((value) {
-      if (value.isNotEmpty) {
-        final path = value.first.path;
-        debugPrint("📦 Diterima saat awal: $path");
-        _loadSharedFile(path);
-      }
-    });
-
-    _intentDataStreamSubscription =
-        ReceiveSharingIntent.instance.getMediaStream().listen((value) {
-          if (value.isNotEmpty) {
-            final path = value.first.path;
-            debugPrint("📥 Diterima saat berjalan: $path");
-            _loadSharedFile(path);
-          }
-        });
   }
 
   @override
   void dispose() {
-    _intentDataStreamSubscription?.cancel();
+    WidgetsBinding.instance.removeObserver(this);
     super.dispose();
   }
 
-  Future<void> _loadSharedFile(String path) async {
-    try {
-      final file = File(path);
-      final content = await file.readAsString();
-      final json = jsonDecode(content);
-
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('imported_quiz', jsonEncode(json));
-
-      if (!mounted) return;
-
-      setState(() {
-        importedQuiz = json;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("✅ Soal berhasil diimpor dari file")),
-      );
-
-      _startQuiz(json);
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("⚠️ Gagal load file: $e")),
-        );
-      }
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // Fix tampilan rusak setelah kembali dari background
+      setState(() {});
     }
   }
 
   Future<void> _loadImportedQuiz() async {
     final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('imported_quiz');
-    if (raw != null) {
-      final data = jsonDecode(raw);
-      setState(() {
-        importedQuiz = data;
-      });
-    }
+    final rawList = prefs.getStringList('imported_quiz_list') ?? [];
+    setState(() {
+      importedQuizList =
+          rawList
+              .map<Map<String, dynamic>>(
+                (item) => jsonDecode(item) as Map<String, dynamic>,
+              )
+              .toList();
+    });
   }
 
   void _startQuiz(Map<String, dynamic> quizData) {
-    final List<QuestionModel> questions = (quizData['questions'] as List)
-        .map((json) => QuestionModel.fromJson(json))
-        .toList();
+    final List<QuestionModel> questions =
+        (quizData['questions'] as List)
+            .map((json) => QuestionModel.fromJson(json))
+            .toList();
 
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => QuizScreen(
-          id: quizData['id'] ?? 'quiz-imported',
-          title: quizData['tema'] ?? 'Quiz',
-          description: quizData['level'] ?? '',
-          questions: questions,
-        ),
+        builder:
+            (_) => QuizScreen(
+              id: quizData['id'] ?? 'quiz-imported',
+              title: quizData['tema'] ?? 'Quiz',
+              description: quizData['level'] ?? '',
+              questions: questions,
+            ),
       ),
     );
   }
@@ -125,21 +86,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final List<Map<String, dynamic>> quizList = [
+    final quizList = [
       ...dummyQuizList.map((e) => e.toJson()),
-      if (importedQuiz != null) importedQuiz!,
+      ...importedQuizList,
     ];
 
     return Scaffold(
       backgroundColor: const Color(0xFF2C233D),
       appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: const Text("Halaman Utama"),
+        backgroundColor: Colors.grey[800],
+        title: const Text(
+          "Halaman Utama",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.download),
             onPressed: _openImportScreen,
-            tooltip: "Import Soal",
+            tooltip: "Import Soal Manual",
           ),
         ],
       ),
@@ -148,46 +116,80 @@ class _HomeScreenState extends State<HomeScreen> {
         child: Column(
           children: [
             const SizedBox(height: 12),
-            const Icon(Icons.emoji_emotions, size: 80, color: Colors.white),
+            const Icon(Icons.reddit, size: 80, color: Colors.white),
             const SizedBox(height: 12),
             const Text(
               "Let's Start Quizzz...",
-              style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.w500),
+              style: TextStyle(
+                fontSize: 20,
+                color: Colors.white,
+                fontWeight: FontWeight.w500,
+              ),
             ),
             const SizedBox(height: 24),
-            QuizListWidget(
-              quizList: quizList,
-              onStartQuiz: _startQuiz,
+
+            /// Quiz List dengan batas tinggi jika > 5 item
+            SizedBox(
+              height: quizList.length > 5 ? 400 : null,
+              child: QuizListWidget(
+                quizList: quizList,
+                onStartQuiz: _startQuiz,
+              ),
             ),
+
             const SizedBox(height: 20),
+
+            /// Action Buttons
             Column(
               children: [
                 ElevatedButton(
-                  onPressed: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (_) => const HistoryScreen()),
-                  ),
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const HistoryScreen(),
+                        ),
+                      ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.orange,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
-                  child: const Text("Lihat History", style: TextStyle(fontWeight: FontWeight.bold)),
+                  child: const Text(
+                    "Lihat History",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
                 const SizedBox(height: 12),
                 ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
+                  onPressed:
+                      () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const WelcomeScreen(),
+                        ),
+                      ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.deepOrange,
                     foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 12,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
                   ),
                   child: const Text("Keluar"),
                 ),
               ],
-            )
+            ),
           ],
         ),
       ),

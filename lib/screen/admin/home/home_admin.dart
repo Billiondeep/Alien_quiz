@@ -1,5 +1,6 @@
 import 'package:alien_quiz/screen/admin/quiz/create_question_form_screen.dart';
 import 'package:alien_quiz/screen/admin/widgets/admin_header.dart';
+import 'package:alien_quiz/screen/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
 class HomeAdmin extends StatelessWidget {
@@ -8,6 +9,7 @@ class HomeAdmin extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+
       backgroundColor: const Color(0xFF2C233D),
       body: SafeArea(
         child: Column(
@@ -15,7 +17,10 @@ class HomeAdmin extends StatelessWidget {
             AdminHeader(
               icon: Icons.logout,
               onPressed: () {
-                Navigator.pop(context);
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const WelcomeScreen()),
+                );
               },
             ),
 
@@ -28,7 +33,7 @@ class HomeAdmin extends StatelessWidget {
                 height: 200,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.orange,
+                  color: Color(0xFFFF7125),
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: const [
                     BoxShadow(

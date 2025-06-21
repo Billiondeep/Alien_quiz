@@ -14,7 +14,7 @@ class AdminHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.grey[800],
-      padding: const EdgeInsets.all(12),
+      padding: const EdgeInsets.all(8),
       width: double.infinity,
       alignment: Alignment.centerLeft,
       child: IconButton(

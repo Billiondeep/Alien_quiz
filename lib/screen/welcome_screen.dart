@@ -1,13 +1,47 @@
 import 'package:alien_quiz/screen/admin/login/login_screen.dart';
+import 'package:alien_quiz/screen/user/welcome/home/import/import_screen.dart';
 import 'package:alien_quiz/screen/user/welcome/name_input_name.dart';
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class WelcomeScreen extends StatelessWidget {
-  const WelcomeScreen({super.key});
+class WelcomeScreen extends StatefulWidget {
+  final Map<String, dynamic>? sharedJson;
+
+  const WelcomeScreen({super.key, this.sharedJson});
+
+  @override
+  State<WelcomeScreen> createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen> {
+  @override
+  void initState() {
+    super.initState();
+
+    if (widget.sharedJson != null) {
+      // Tunggu 1 frame agar Navigator tidak error
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => ImportScreen(sharedJson: widget.sharedJson!),
+          ),
+        );
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (widget.sharedJson != null) {
+      // Hindari build UI ketika sedang push ke import
+      return const Scaffold(
+        backgroundColor: Color(0xFF1A1A2E),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    // 👇 sisanya tetap sama
     return Scaffold(
       backgroundColor: const Color(0xFF2C233D),
       body: SafeArea(
@@ -17,7 +51,7 @@ class WelcomeScreen extends StatelessWidget {
             Container(
               color: Colors.grey[800],
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.all(14),
               child: GestureDetector(
                 onTap: () {
                   Navigator.push(
@@ -30,36 +64,21 @@ class WelcomeScreen extends StatelessWidget {
                     'Halaman Login',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 16,
+                      fontSize: 20,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                 ),
               ),
             ),
-
             const Spacer(),
-
-            // Logo Reddit (alien)
-            const Icon(
-              Icons.reddit,
-              size: 100,
-              color: Colors.orange,
-            ),
+            const Icon(Icons.reddit, size: 100, color: Colors.orange),
             const SizedBox(height: 16),
-
-            // Text title
             const Text(
               "Alien Quiz",
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w600,
-                color: Colors.white,
-              ),
+              style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600, color: Colors.white),
             ),
             const SizedBox(height: 28),
-
-            // Tombol Start dengan bayangan
             ElevatedButton(
               onPressed: () {
                 Navigator.pushReplacement(
@@ -71,24 +90,15 @@ class WelcomeScreen extends StatelessWidget {
                 backgroundColor: Colors.orange,
                 shadowColor: Colors.black,
                 elevation: 6,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
                 padding: const EdgeInsets.symmetric(horizontal: 36, vertical: 14),
               ),
               child: const Text(
                 "Let’s Starttt!!",
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
               ),
             ),
-
             const Spacer(),
-
-            // Sosial media
             Padding(
               padding: const EdgeInsets.only(bottom: 24.0),
               child: Row(

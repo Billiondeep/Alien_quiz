@@ -60,57 +60,68 @@ class _FormPgWidgetState extends State<FormPgWidget> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 12),
-      child: Container(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          color: const Color(0xFF2C233D),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.orange, width: 1),
+          color: const Color(0xFF1F1B2E),
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              offset: const Offset(0, 3),
+              blurRadius: 6,
+            ),
+          ],
+          border: Border.all(color: Colors.orange.shade300, width: 1),
         ),
         child: Column(
           children: [
-            ListTile(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              title: Text(
-                "Buat Soal ${widget.index + 1}",
-                style: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.orange,
+            InkWell(
+              onTap: () => setState(() => isExpanded = !isExpanded),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      "Buat Soal ${widget.index + 1}",
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                        color: Colors.orange,
+                      ),
+                    ),
+                    Icon(
+                      isExpanded ? Icons.remove_circle_outline : Icons.add_circle_outline,
+                      color: Colors.orange,
+                    ),
+                  ],
                 ),
               ),
-              trailing: Icon(
-                isExpanded ? Icons.remove : Icons.add,
-                color: Colors.orange,
-              ),
-              onTap: () => setState(() => isExpanded = !isExpanded),
             ),
-            AnimatedCrossFade(
-              duration: const Duration(milliseconds: 300),
-              crossFadeState: isExpanded ? CrossFadeState.showFirst : CrossFadeState.showSecond,
-              firstChild: Container(
+            if (isExpanded)
+              Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: const Color(0xFF1C1B29),
-                  borderRadius: const BorderRadius.only(
-                    bottomLeft: Radius.circular(12),
-                    bottomRight: Radius.circular(12),
-                  ),
+                padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+                decoration: const BoxDecoration(
+                  color: Color(0xFF1F1B2E),
+                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
                 ),
                 child: Column(
+
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text("Pertanyaan", style: TextStyle(color: Colors.white70)),
-                    const SizedBox(height: 4),
+                    _sectionTitle("Pertanyaan"),
+                    const SizedBox(height: 6),
                     TextField(
                       controller: questionController,
                       style: const TextStyle(color: Colors.white),
-                      decoration: _darkInput("Pertanyaan"),
+                      decoration: _darkInput("Masukan Pertanyaan"),
                     ),
                     const SizedBox(height: 16),
-                    const Text("Jawaban Pilihan Ganda", style: TextStyle(color: Colors.white70)),
+                    _sectionTitle("Jawaban Pilihan Ganda"),
                     const SizedBox(height: 8),
                     ...List.generate(5, (j) {
                       return Padding(
@@ -122,31 +133,45 @@ class _FormPgWidgetState extends State<FormPgWidget> {
                         ),
                       );
                     }),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
+                    _sectionTitle("Jawaban yang Benar"),
+                    const SizedBox(height: 6),
                     DropdownButtonFormField<int>(
                       value: selectedCorrectIndex,
                       isExpanded: true,
                       dropdownColor: const Color(0xFF1C1B29),
                       style: const TextStyle(color: Colors.white),
-                      decoration: _darkInput("Jawaban Benar: ${selectedCorrectIndex + 1}"),
+                      decoration: _darkInput("Pilih Jawaban Benar"),
                       onChanged: (val) {
                         if (val != null) {
                           setState(() => selectedCorrectIndex = val);
                           _notifyChange();
                         }
                       },
-                      items: List.generate(5, (j) => DropdownMenuItem(
-                        value: j,
-                        child: Text('Jawaban ${j + 1}'),
-                      )),
+                      items: List.generate(
+                        5,
+                            (j) => DropdownMenuItem(
+                          value: j,
+                          child: Text('Jawaban ${j + 1}'),
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
-              secondChild: const SizedBox.shrink(),
-            ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _sectionTitle(String title) {
+    return Text(
+      title,
+      style: const TextStyle(
+        fontSize: 14,
+        fontWeight: FontWeight.w600,
+        color: Colors.white70,
       ),
     );
   }

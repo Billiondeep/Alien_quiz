@@ -4,102 +4,171 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class ImportScreen extends StatelessWidget {
-  const ImportScreen({super.key});
+class ImportScreen extends StatefulWidget {
+  final Map<String, dynamic>? sharedJson;
 
-  Future<void> _importSoal(BuildContext context) async {
+  const ImportScreen({super.key, this.sharedJson});
+
+  @override
+  State<ImportScreen> createState() => _ImportScreenState();
+}
+
+class _ImportScreenState extends State<ImportScreen> {
+  bool isLoading = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.sharedJson != null) {
+      _importData(widget.sharedJson!);
+    }
+  }
+
+  Future<void> _importData(Map<String, dynamic> jsonData) async {
+    setState(() => isLoading = true);
+
     try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
+      final prefs = await SharedPreferences.getInstance();
+      final existing = prefs.getStringList('imported_quiz_list') ?? [];
+      final updatedList = [jsonEncode(jsonData), ...existing];
+      if (updatedList.length > 5) {
+        updatedList.removeRange(5, updatedList.length);
+      }
+
+      await prefs.setStringList('imported_quiz_list', updatedList);
+      await prefs.setString('imported_quiz', jsonEncode(jsonData));
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("✅ Soal berhasil diimpor")),
+      );
+      Navigator.pop(context, true);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("⚠️ Gagal impor file: $e")),
+      );
+    } finally {
+      if (mounted) setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> _pickFile() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
         allowedExtensions: ['json'],
       );
 
-      if (result != null) {
-        final bytes = result.files.single.bytes;
-        final content = bytes != null
-            ? String.fromCharCodes(bytes)
-            : await File(result.files.single.path!).readAsString();
+      if (result != null && result.files.single.path != null) {
+        final file = File(result.files.single.path!);
+        if (!await file.exists()) throw Exception("File tidak ditemukan");
 
-        final parsedJson = jsonDecode(content);
+        final content = await file.readAsString();
+        dynamic decoded = jsonDecode(content);
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('imported_quiz', jsonEncode(parsedJson));
-
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("✅ Soal berhasil diimpor")),
-          );
-          Navigator.pop(context, true);
-        }
-      } else {
-        if (context.mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text("❌ File tidak dipilih")),
-          );
+        if (decoded is Map<String, dynamic>) {
+          await _importData(decoded);
+        } else {
+          throw Exception("File bukan format quiz valid (harus JSON object).");
         }
       }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("⚠️ Gagal impor soal: $e")),
-        );
-      }
+    } catch (e, stack) {
+      debugPrint('❌ Exception saat import: $e');
+      debugPrint(stack.toString());
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("⚠️ Gagal membaca file: $e")),
+      );
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
+    if (widget.sharedJson != null || isLoading) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF2C233D),
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
-      backgroundColor: const Color(0xFF1C1B2F),
+      backgroundColor: const Color(0xFF2C233D),
       appBar: AppBar(
-        backgroundColor: Colors.grey[900],
-        title: const Text("Import File Soal"),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+        backgroundColor: Colors.grey[800],
+        title: const Text(
+          "Import Manual",
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
         ),
+        centerTitle: true,
       ),
       body: Column(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           const Padding(
-            padding: EdgeInsets.all(16),
+            padding: EdgeInsets.only(top: 24.0),
             child: Text(
-              "Masukkan File Quiz dalam format JSON. Quiz akan ditampilkan di Home setelah berhasil diimpor.",
-              style: TextStyle(color: Colors.white),
+              "Masukan File Quiz yang ingin di Import dalam\nbentuk Format File JSON.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70),
             ),
           ),
-          const Spacer(),
           Center(
             child: Container(
-              height: 200,
-              width: 300,
+              width: 260,
+              padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Colors.black45,
+                    offset: Offset(4, 4),
+                    blurRadius: 8,
+                  ),
+                ],
               ),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.file_upload, size: 50),
-                  const SizedBox(height: 10),
-                  const Text("Upload File JSON"),
+                  const Icon(Icons.download, size: 48, color: Colors.black),
+                  const SizedBox(height: 12),
+                  const Text(
+                    "Drag and Drop here\nor",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.black87,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
                   ElevatedButton(
-                    onPressed: () => _importSoal(context),
-                    style: ElevatedButton.styleFrom(backgroundColor: Colors.orange),
+                    onPressed: _pickFile,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 4,
+                    ),
                     child: const Text("Import Soal"),
                   ),
                 ],
               ),
             ),
           ),
-          const Spacer(),
-          Container(
-            padding: const EdgeInsets.all(8),
-            color: Colors.grey[800],
-            child: const Text(
-              "Pastikan format file sudah sesuai struktur JSON Quiz.",
-              style: TextStyle(color: Colors.white),
+          const Padding(
+            padding: EdgeInsets.only(bottom: 20),
+            child: Text(
+              "Pastikan File yang akan di Import benar.",
+              style: TextStyle(color: Colors.white60),
             ),
           ),
         ],

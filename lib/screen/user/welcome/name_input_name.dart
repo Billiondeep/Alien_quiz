@@ -1,4 +1,5 @@
 import 'package:alien_quiz/screen/user/welcome/home/home_screen.dart';
+import 'package:alien_quiz/screen/user/welcome/widgets/user_header.dart';
 import 'package:alien_quiz/screen/welcome_screen.dart';
 import 'package:flutter/material.dart';
 
@@ -11,22 +12,14 @@ class NameInputScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF29243E),
-      appBar: AppBar(
-        backgroundColor: Colors.grey[800],
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => Navigator.push(
-            context,
-            MaterialPageRoute(builder: (_) => WelcomeScreen()),
-          )
+      appBar: UserHeader(
+        title: "Masukan Nama",
+        onBack: () => Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const WelcomeScreen()),
         ),
-        title: const Text(
-          "Masukan Nama",
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
       ),
+
       body: Center(
         child: Container(
           margin: const EdgeInsets.symmetric(horizontal: 32),
